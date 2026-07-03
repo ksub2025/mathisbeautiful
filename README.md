@@ -50,4 +50,4 @@ Download `index.html` and open it in a browser. That is the entire setup.
 
 ---
 
-Built by [Karthi Subbaraman](https://learnerd.in) with Claude, in one day, as part of the Builder Life journey. 1+1=11.
+Built by [Karthi Subbaraman](https://learnerd.in) with Claude Fable.
