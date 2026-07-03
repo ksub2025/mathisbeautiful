@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math is Beautiful</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital@0;1&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b0e14;
+  --paper:#f7f3ea;
+  --gold:#d4a24e;
+  --gold-bright:#f0c36d;
+  --teal:#3ea6a0;
+  --rose:#d96a7b;
+  --violet:#9b7fd4;
+  --dim:#8a8577;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.6;overflow-x:hidden;
+}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:100;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:900;letter-spacing:-.02em}
+.fadein{opacity:0;transform:translateY(24px);transition:opacity 1s ease,transform 1s ease}
+.fadein.vis{opacity:1;transform:none}
+.shimmer{
+  background:linear-gradient(120deg,var(--paper) 30%,var(--gold-bright) 50%,var(--paper) 70%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  background-size:200% 100%;animation:shimmer 6s ease-in-out infinite;
+}
+@keyframes shimmer{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:90;
+  display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;
+  padding:.7rem 2vw;background:rgba(11,14,20,.82);backdrop-filter:blur(10px);
+  border-bottom:1px solid #1a1f2a;
+}
+nav a{
+  font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);text-decoration:none;padding:.35rem .7rem;border-radius:999px;transition:all .25s;
+  border:1px solid transparent;white-space:nowrap;
+}
+nav a:hover,nav a.here{color:var(--gold-bright);border-color:#3a4152}
+
+/* SECTIONS */
+section{min-height:100vh;padding:12vh 6vw 10vh;display:flex;flex-direction:column;justify-content:center;position:relative}
+.exhibit-head{margin-bottom:2.6rem;max-width:900px}
+.exhibit-head .num{font-family:'Fraunces',serif;font-size:1rem;font-style:italic;color:var(--gold)}
+.exhibit-head h2{font-size:clamp(2rem,5.5vw,4rem);margin:.35rem 0 .7rem}
+.exhibit-head p{max-width:56ch;font-size:1.12rem;color:#c9c3b4}
+.stage{display:flex;gap:4vw;align-items:flex-start;flex-wrap:wrap}
+canvas.exhibit{
+  background:radial-gradient(ellipse at center,#12161f 0%,#0b0e14 78%);
+  border:1px solid #1e2430;border-radius:8px;max-width:100%;touch-action:none;
+}
+.controls{flex:1;min-width:270px;max-width:430px}
+.controls label{display:block;margin-bottom:.3rem}
+input[type=range]{width:100%;appearance:none;height:2px;background:#2a3040;border-radius:2px;outline:none;margin:10px 0 20px}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold);border:2px solid var(--ink);box-shadow:0 0 12px var(--gold);cursor:grab}
+input[type=number]{
+  font-family:'IBM Plex Mono',monospace;font-size:1.25rem;width:170px;text-align:center;
+  background:#12161f;color:var(--gold-bright);border:1px solid #3a4152;border-radius:8px;padding:.55rem;outline:none;
+}
+input[type=number]:focus{border-color:var(--gold);box-shadow:0 0 12px rgba(212,162,78,.25)}
+.readout{font-family:'IBM Plex Mono',monospace;font-size:1.35rem;color:var(--gold-bright)}
+.whisper{
+  font-style:italic;color:var(--dim);border-left:2px solid var(--gold);padding-left:1rem;
+  margin-top:1.2rem;min-height:3em;transition:opacity .5s;font-size:1.05rem;max-width:46ch;
+}
+.btnrow{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem}
+button.chip{
+  font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  background:transparent;color:var(--paper);border:1px solid #3a4152;border-radius:999px;
+  padding:.55rem 1.15rem;cursor:pointer;transition:all .25s;
+}
+button.chip:hover,button.chip.active{border-color:var(--gold);color:var(--gold-bright);box-shadow:0 0 12px rgba(212,162,78,.25)}
+button.chip:disabled{opacity:.3;cursor:default;box-shadow:none}
+
+/* accent themes per exhibit */
+.t-teal .exhibit-head .num,.t-teal .readout{color:var(--teal)}
+.t-teal .whisper{border-color:var(--teal)}
+.t-teal input[type=range]::-webkit-slider-thumb{background:var(--teal);box-shadow:0 0 12px var(--teal)}
+.t-rose .exhibit-head .num,.t-rose .readout{color:var(--rose)}
+.t-rose .whisper{border-color:var(--rose)}
+.t-rose input[type=range]::-webkit-slider-thumb{background:var(--rose);box-shadow:0 0 12px var(--rose)}
+.t-violet .exhibit-head .num,.t-violet .readout{color:var(--violet)}
+.t-violet .whisper{border-color:var(--violet)}
+.t-violet input[type=range]::-webkit-slider-thumb{background:var(--violet);box-shadow:0 0 12px var(--violet)}
+
+/* HERO */
+#hero{align-items:center;text-align:center}
+#hero h1{font-size:clamp(3rem,10vw,7.5rem);line-height:.95}
+#hero .sub{margin-top:1.5rem;font-size:1.3rem;font-style:italic;color:var(--dim);max-width:36ch}
+#heroCanvas{position:absolute;inset:0;z-index:-1;opacity:.5}
+.scroll-hint{position:absolute;bottom:4vh;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(10px);opacity:1}}
+
+/* LOBBY */
+#lobby{min-height:auto;padding-top:6vh;padding-bottom:10vh}
+#lobby h2{font-size:clamp(1.6rem,4vw,2.6rem);text-align:center;margin-bottom:2.4rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.1rem;max-width:1100px;margin:0 auto;width:100%}
+.card{
+  border:1px solid #1e2430;border-radius:10px;padding:1.4rem 1.3rem;text-decoration:none;color:var(--paper);
+  background:linear-gradient(160deg,#12161f,#0b0e14);transition:all .3s;position:relative;overflow:hidden;
+}
+.card:hover{border-color:var(--gold);transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.card .glyph{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:900;margin-bottom:.4rem}
+.card h3{font-size:1.25rem;margin-bottom:.3rem}
+.card p{font-size:.95rem;color:var(--dim);font-style:italic;line-height:1.45}
+.card .tag{position:absolute;top:1rem;right:1rem;font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#4a4f5c}
+
+/* 1729 story block */
+.taxi{
+  font-family:'Fraunces',serif;font-weight:900;font-size:clamp(3.4rem,12vw,8rem);line-height:1;cursor:pointer;user-select:none;text-align:center;
+}
+.dialogue{max-width:56ch;margin:1.6rem auto 0;font-size:1.18rem;text-align:center}
+.dialogue .hardy{color:var(--dim);font-style:italic}
+.dialogue .rama{color:var(--gold-bright);margin-top:1rem;font-style:italic}
+.cubepanels{display:flex;gap:2.5vw;flex-wrap:wrap;justify-content:center;margin-top:2.4rem;width:100%}
+.cubepanel{flex:1;min-width:290px;max-width:480px;text-align:center}
+.cubepanel canvas{width:100%;border:1px solid #1e2430;border-radius:8px;background:radial-gradient(ellipse at center,#12161f 0%,#0b0e14 78%)}
+.cubepanel .eq{font-family:'IBM Plex Mono',monospace;font-size:.95rem;margin-top:.7rem;min-height:2.2em}
+.cubepanel .eq .a{color:var(--teal)} .cubepanel .eq .b{color:var(--rose)} .cubepanel .eq .total{color:var(--gold-bright);font-size:1.2rem}
+.huntbox{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+#huntResult{font-family:'IBM Plex Mono',monospace;font-size:.95rem;margin-top:1.2rem;min-height:4.5em;line-height:1.9}
+#huntResult .hit{color:var(--gold-bright)} #huntResult .miss{color:var(--dim)} #huntResult .pair{color:var(--teal)}
+
+/* gallery plates */
+.plates{display:flex;flex-direction:column;gap:9vh;width:100%}
+.plate-row{display:flex;gap:4vw;align-items:center;justify-content:center;flex-wrap:wrap}
+.plate-row.rev{flex-direction:row-reverse}
+.artwrap{position:relative}
+canvas.art{width:min(86vw,470px);aspect-ratio:1;display:block;border:1px solid #1e2430;border-radius:8px;background:radial-gradient(ellipse at center,#12161f 0%,#0b0e14 78%)}
+.nameplate{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:-13px;
+  background:var(--ink);border:1px solid #2a3040;border-radius:4px;
+  padding:.22rem .8rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--dim);white-space:nowrap;
+}
+.plate-side{flex:1;min-width:270px;max-width:400px}
+.plate-side h3{font-size:clamp(1.4rem,3.5vw,2rem);margin:.25rem 0 .4rem}
+.plate-side .eq{font-family:'IBM Plex Mono',monospace;color:var(--teal);font-size:.88rem;margin-bottom:.8rem}
+.plate-side p.desc{color:#c9c3b4;font-size:1.02rem;margin-bottom:1.1rem}
+
+/* draw exhibit */
+.stagewrap{position:relative;width:min(90vw,720px)}
+.stagewrap canvas{width:100%;display:block;cursor:crosshair}
+.hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;flex-direction:column;gap:.4rem;transition:opacity .6s}
+.hint .big{font-family:'Fraunces',serif;font-size:1.4rem;font-style:italic;color:rgba(247,243,234,.5)}
+.hint.hide{opacity:0}
+
+/* closing */
+#close{text-align:center;align-items:center;min-height:80vh}
+#close h2{font-size:clamp(2rem,5vw,3.6rem);max-width:22ch}
+#close p{margin-top:1.3rem;color:var(--dim);font-style:italic;font-size:1.2rem}
+footer{padding:3rem 6vw;text-align:center;color:#4a4f5c;font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase}
+.backlobby{margin-top:2.2rem}
+.backlobby a{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);text-decoration:none;border-bottom:1px dotted #3a4152;padding-bottom:2px}
+.backlobby a:hover{color:var(--gold-bright)}
+@media(max-width:720px){.stage{flex-direction:column}section{padding:14vh 5vw 8vh}}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<nav id="nav">
+  <a href="#hero">Home</a>
+  <a href="#phi">φ Spiral</a>
+  <a href="#pi">π Circle</a>
+  <a href="#primes">Primes</a>
+  <a href="#draw">Draw</a>
+  <a href="#taxi">1729</a>
+  <a href="#gallery">Gallery</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="heroCanvas"></canvas>
+  <p class="mono fadein">an invitation, not a textbook</p>
+  <h1 class="shimmer fadein">Math is<br>Beautiful</h1>
+  <p class="sub fadein">You were never bad at math. You were just never shown its face. Six exhibits below. Touch everything.</p>
+  <div class="scroll-hint mono">enter ↓</div>
+</section>
+
+<!-- LOBBY -->
+<section id="lobby">
+  <h2 class="fadein">The Exhibits</h2>
+  <div class="cards fadein">
+    <a class="card" href="#phi"><span class="tag">drag</span><div class="glyph" style="color:var(--gold-bright)">φ</div><h3>The Golden Spiral</h3><p>Grow the curve that lives in shells, storms and galaxies.</p></a>
+    <a class="card" href="#pi"><span class="tag">roll</span><div class="glyph" style="color:var(--teal)">π</div><h3>The Circle, Unrolled</h3><p>Every circle in the universe hides the same secret.</p></a>
+    <a class="card" href="#primes"><span class="tag">reveal</span><div class="glyph" style="color:var(--rose)">ℙ</div><h3>The Primes Whisper</h3><p>Chaos, until you spiral it. Then patterns nobody can explain.</p></a>
+    <a class="card" href="#draw"><span class="tag">draw</span><div class="glyph" style="color:var(--gold-bright)">∿</div><h3>Draw, Math Draws Back</h3><p>Sketch anything. Spinning circles will redraw it perfectly.</p></a>
+    <a class="card" href="#taxi"><span class="tag">story</span><div class="glyph" style="color:var(--gold-bright)">1729</div><h3>Ramanujan's Taxicab</h3><p>The most famous small talk in the history of mathematics.</p></a>
+    <a class="card" href="#gallery"><span class="tag">design</span><div class="glyph" style="color:var(--violet)">✿</div><h3>Drawn by Equations</h3><p>A design gallery where every artist is a formula.</p></a>
+  </div>
+</section>
+
+<!-- EXHIBIT 1: GOLDEN SPIRAL -->
+<section id="phi">
+  <div class="exhibit-head fadein">
+    <div class="num">Exhibit 01 · φ</div>
+    <h2>The Golden Spiral</h2>
+    <p>Take a rectangle. Cut away a perfect square. What remains is the same rectangle, smaller. Do it forever, and a spiral is born. Nature discovered this before we did.</p>
+  </div>
+  <div class="stage fadein">
+    <canvas id="phiCanvas" class="exhibit" width="640" height="480"></canvas>
+    <div class="controls">
+      <label class="mono" for="phiSlider">turns of the spiral</label>
+      <input type="range" id="phiSlider" min="0" max="100" value="0">
+      <div class="readout">φ = 1.6180339…</div>
+      <p class="whisper" id="phiWhisper">Begin. One square at a time.</p>
+      <div class="btnrow">
+        <button class="chip" id="phiSun">overlay: sunflower</button>
+        <button class="chip" id="phiAuto">let it grow</button>
+      </div>
+      <p class="backlobby"><a href="#lobby">↑ back to exhibits</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- EXHIBIT 2: PI -->
+<section id="pi" class="t-teal">
+  <div class="exhibit-head fadein">
+    <div class="num">Exhibit 02 · π</div>
+    <h2>The Circle, Unrolled</h2>
+    <p>Roll a circle along a line and its edge lays out exactly π diameters. Always, everywhere, at every size. Then watch its infinite digits become a walk that never repeats.</p>
+  </div>
+  <div class="stage fadein">
+    <canvas id="piCanvas" class="exhibit" width="640" height="480"></canvas>
+    <div class="controls">
+      <label class="mono" for="piSlider">roll the circle</label>
+      <input type="range" id="piSlider" min="0" max="100" value="0">
+      <div class="readout" id="piReadout">0.00 diameters</div>
+      <p class="whisper" id="piWhisper">Push the wheel. Count the diameters.</p>
+      <div class="btnrow">
+        <button class="chip" id="piWalk">the digit walk</button>
+        <button class="chip" id="piRoll">back to rolling</button>
+      </div>
+      <p class="backlobby"><a href="#lobby">↑ back to exhibits</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- EXHIBIT 3: PRIMES -->
+<section id="primes" class="t-rose">
+  <div class="exhibit-head fadein">
+    <div class="num">Exhibit 03 · ℙ</div>
+    <h2>The Primes Whisper</h2>
+    <p>In 1963 a bored mathematician doodled numbers in a spiral during a lecture. When he circled the primes, diagonal lines appeared out of nowhere. Nobody fully knows why.</p>
+  </div>
+  <div class="stage fadein">
+    <canvas id="ulamCanvas" class="exhibit" width="640" height="480"></canvas>
+    <div class="controls">
+      <label class="mono" for="ulamSlider">numbers plotted</label>
+      <input type="range" id="ulamSlider" min="1" max="100" value="1">
+      <div class="readout" id="ulamReadout">n = 1</div>
+      <p class="whisper" id="ulamWhisper">Spiral outward from 1. Light up the primes.</p>
+      <div class="btnrow"><button class="chip" id="ulamAuto">draw it for me</button></div>
+      <p class="backlobby"><a href="#lobby">↑ back to exhibits</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- EXHIBIT 4: FOURIER DRAW -->
+<section id="draw">
+  <div class="exhibit-head fadein">
+    <div class="num">Exhibit 04 · ∿</div>
+    <h2>Draw, and Math Draws Back</h2>
+    <p>Sketch anything in one stroke. A star, your initial, a cat. Then watch a chain of spinning circles, doing nothing but going round and round, redraw it perfectly. Joseph Fourier discovered this in 1807 and mathematicians called him crazy.</p>
+  </div>
+  <div class="stage fadein">
+    <div class="stagewrap">
+      <canvas id="fCanvas" class="exhibit" width="1440" height="900"></canvas>
+      <div class="hint" id="fHint">
+        <div class="big">draw here with your finger or mouse</div>
+        <div class="mono">one continuous stroke works best</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="btnrow" style="margin-top:0">
+        <button class="chip" id="fRedraw" disabled>math, draw it back</button>
+        <button class="chip" id="fClear">clear</button>
+      </div>
+      <label class="mono" for="fSlider" style="margin-top:1.4rem">number of circles</label>
+      <input type="range" id="fSlider" min="2" max="150" value="60">
+      <div class="readout" id="fReadout" style="font-size:1rem">60 circles</div>
+      <p class="whisper" id="fWhisper">Every drawing, no matter how wild, is secretly a sum of perfect circles.</p>
+      <p class="backlobby"><a href="#lobby">↑ back to exhibits</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- EXHIBIT 5: 1729 -->
+<section id="taxi">
+  <div class="exhibit-head fadein" style="text-align:center;max-width:100%">
+    <div class="num">Exhibit 05 · london, 1918, a hospital room</div>
+    <div class="taxi shimmer" id="taxiNum" title="tap me">1729</div>
+    <div class="dialogue">
+      <p class="hardy">"I rode here in taxicab number 1729. Rather a dull number, I thought."</p>
+      <p class="rama">"No, Hardy. It is a very interesting number. It is the smallest number expressible as the sum of two cubes in two different ways."</p>
+    </div>
+    <p class="mono" style="margin-top:1.6rem">g.h. hardy visits srinivasa ramanujan · answered from his sickbed, instantly</p>
+  </div>
+  <div class="cubepanels fadein">
+    <div class="cubepanel">
+      <canvas id="cvA" width="900" height="740"></canvas>
+      <div class="eq" id="eqA"><span class="a">1³</span> + <span class="b">12³</span></div>
+    </div>
+    <div class="cubepanel">
+      <canvas id="cvB" width="900" height="740"></canvas>
+      <div class="eq" id="eqB"><span class="a">9³</span> + <span class="b">10³</span></div>
+    </div>
+  </div>
+  <div class="btnrow fadein" style="justify-content:center;margin-top:1.4rem">
+    <button class="chip" id="buildBtn">build the cubes</button>
+    <button class="chip" id="resetCubes">reset</button>
+  </div>
+  <div class="stage fadein" style="margin-top:3.5rem;justify-content:center">
+    <div class="controls" style="max-width:560px;text-align:center">
+      <h3 style="font-size:1.5rem;margin-bottom:.4rem">Now you try. Find another one.</h3>
+      <p style="color:var(--dim);font-style:italic;margin-bottom:1rem">Test any number. Sum of two cubes at all? Once? Twice?</p>
+      <div class="huntbox" style="justify-content:center">
+        <input type="number" id="huntInput" min="1" max="1000000" placeholder="try 4104">
+        <button class="chip" id="huntBtn">test it</button>
+        <button class="chip" id="surpriseBtn">surprise me</button>
+      </div>
+      <div id="huntResult"></div>
+      <p class="whisper" id="huntWhisper" style="margin-left:auto;margin-right:auto;text-align:left">Hint: your birth year probably fails. That is exactly why 1729 is special.</p>
+      <p class="backlobby"><a href="#lobby">↑ back to exhibits</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- EXHIBIT 6: GALLERY -->
+<section id="gallery" class="t-violet">
+  <div class="exhibit-head fadein">
+    <div class="num">Exhibit 06 · the design wing</div>
+    <h2>Drawn by Equations</h2>
+    <p>No images anywhere in this wing. Every piece is a single formula drawn live on your screen. Move the sliders. You are now the co-designer.</p>
+  </div>
+  <div class="plates">
+
+    <div class="plate-row fadein">
+      <div class="artwrap">
+        <canvas class="art" id="cRose" width="940" height="940"></canvas>
+        <div class="nameplate">plate i · rose curve · 1728, guido grandi</div>
+      </div>
+      <div class="plate-side">
+        <h3>The Mathematical Rose</h3>
+        <div class="eq">r = cos(k·θ)</div>
+        <p class="desc">One cosine is the entire artist. The number k decides how many petals bloom. Between whole numbers, the flower refuses to close and weaves something wilder.</p>
+        <label class="mono">k · the petal number: <span id="roseKv">4.0</span></label>
+        <input type="range" id="roseK" min="1" max="12" step="0.05" value="4">
+        <p class="whisper" id="roseW">Slide slowly through the space between 4 and 5. The in-between flowers are the secret ones.</p>
+      </div>
+    </div>
+
+    <div class="plate-row rev fadein">
+      <div class="artwrap">
+        <canvas class="art" id="cMaurer" width="940" height="940"></canvas>
+        <div class="nameplate">plate ii · maurer rose · 1987, peter maurer</div>
+      </div>
+      <div class="plate-side">
+        <h3>String Art, by Numbers</h3>
+        <div class="eq">rose points joined every d degrees</div>
+        <p class="desc">Jump along the rose in steps of d degrees and connect the dots with straight lines. Thread art, kolam geometry, temple ceilings. All hiding inside one flower.</p>
+        <label class="mono">n · petals: <span id="maurerNv">6</span></label>
+        <input type="range" id="maurerN" min="2" max="9" step="1" value="6">
+        <label class="mono">d · the jump: <span id="maurerDv">71</span>°</label>
+        <input type="range" id="maurerD" min="1" max="180" step="1" value="71">
+        <p class="whisper" id="maurerW">Prime number jumps make the richest weaves. Try 29, 97, 173.</p>
+      </div>
+    </div>
+
+    <div class="plate-row fadein">
+      <div class="artwrap">
+        <canvas class="art" id="cLiss" width="940" height="940"></canvas>
+        <div class="nameplate">plate iii · lissajous figure · 1857, jules lissajous</div>
+      </div>
+      <div class="plate-side">
+        <h3>Two Rhythms, One Dance</h3>
+        <div class="eq">x = sin(a·t + φ) · y = sin(b·t)</div>
+        <p class="desc">One wave moves the pen left-right, another up-down. When their speeds form a neat ratio like 3:2, the dance closes into a loop. This is what sound ratios look like.</p>
+        <label class="mono">a · horizontal: <span id="lissAv">3</span></label>
+        <input type="range" id="lissA" min="1" max="9" step="1" value="3">
+        <label class="mono">b · vertical: <span id="lissBv">2</span></label>
+        <input type="range" id="lissB" min="1" max="9" step="1" value="2">
+        <label class="mono">φ · phase: <span id="lissPv">90</span>°</label>
+        <input type="range" id="lissP" min="0" max="180" step="1" value="90">
+        <p class="whisper" id="lissW">3 and 2 is a musical fifth. You are looking at harmony.</p>
+      </div>
+    </div>
+
+    <div class="plate-row rev fadein">
+      <div class="artwrap">
+        <canvas class="art" id="cPhyl" width="940" height="940"></canvas>
+        <div class="nameplate">plate iv · phyllotaxis · nature's own, described 1979, h. vogel</div>
+      </div>
+      <div class="plate-side">
+        <h3>The Sunflower Algorithm</h3>
+        <div class="eq">θ = n·137.5° · r = c·√n</div>
+        <p class="desc">Place each dot one golden angle further around, a little further out. At exactly 137.5 degrees the dots pack perfectly. Drift half a degree and order collapses into spokes.</p>
+        <label class="mono">angle: <span id="phylAv">137.5</span>°</label>
+        <input type="range" id="phylA" min="130" max="145" step="0.05" value="137.5">
+        <div class="btnrow">
+          <button class="chip" id="phylGolden">snap to golden</button>
+          <button class="chip" id="phylBreak">break it</button>
+        </div>
+        <p class="whisper" id="phylW">This slider is the whole exhibit. Perfection is one specific number.</p>
+      </div>
+    </div>
+
+    <div class="plate-row fadein">
+      <div class="artwrap">
+        <canvas class="art" id="cHarm" width="940" height="940"></canvas>
+        <div class="nameplate">plate v · harmonograph · 1870s drawing machines</div>
+      </div>
+      <div class="plate-side">
+        <h3>The Fading Pendulum</h3>
+        <div class="eq">two damped pendulums share one pen</div>
+        <p class="desc">Victorians attached pens to swinging pendulums and watched them draw. The swing slowly dies, so the line spirals inward, leaving a ghost of the motion.</p>
+        <label class="mono">frequency ratio: <span id="harmRv">2.01</span></label>
+        <input type="range" id="harmR" min="1" max="4" step="0.01" value="2.01">
+        <label class="mono">decay: <span id="harmDv">0.004</span></label>
+        <input type="range" id="harmD" min="0.001" max="0.012" step="0.0005" value="0.004">
+        <div class="btnrow"><button class="chip" id="harmGo">swing again</button></div>
+        <p class="whisper" id="harmW">2.00 is neat. 2.01 is alive. Imperfection is the style.</p>
+      </div>
+    </div>
+  </div>
+  <p class="backlobby fadein" style="text-align:center;margin-top:4rem"><a href="#lobby">↑ back to exhibits</a></p>
+</section>
+
+<!-- CLOSING -->
+<section id="close">
+  <h2 class="fadein">Nobody is afraid of a sunflower.</h2>
+  <p class="fadein">Math was never the enemy. The way it was shown to you was.</p>
+</section>
+
+<footer>math is beautiful · every exhibit is live code, no images anywhere · for the ones who were told they were bad at math</footer>
+
+<script>
+/* ============ shared ============ */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')}),{threshold:.12});
+document.querySelectorAll('.fadein').forEach(el=>io.observe(el));
+function setW(el,msg){if(!el||el.textContent===msg)return;el.style.opacity=0;setTimeout(()=>{el.textContent=msg;el.style.opacity=1},250)}
+
+/* nav highlight */
+const navLinks=[...document.querySelectorAll('nav a')];
+const secIO=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(a=>a.classList.toggle('here',a.getAttribute('href')==='#'+e.target.id));
+    }
+  });
+},{threshold:.4});
+document.querySelectorAll('section').forEach(s=>secIO.observe(s));
+
+/* ============ hero starfield ============ */
+(()=>{
+const c=document.getElementById('heroCanvas'),x=c.getContext('2d');
+const PI="31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903";
+let stars=[];
+function resize(){c.width=innerWidth;c.height=innerHeight;stars=[];
+  for(let i=0;i<160;i++)stars.push({x:Math.random()*c.width,y:Math.random()*c.height,d:PI[i%PI.length],s:Math.random()*.6+.3,v:Math.random()*.25+.05});}
+resize();addEventListener('resize',resize);
+(function loop(){
+  x.clearRect(0,0,c.width,c.height);x.font='14px IBM Plex Mono';
+  stars.forEach(s=>{s.y-=s.v;if(s.y<-20)s.y=c.height+20;x.fillStyle=`rgba(212,162,78,${s.s*.5})`;x.fillText(s.d,s.x,s.y)});
+  requestAnimationFrame(loop);
+})();
+})();
+
+/* ============ Exhibit 1: golden spiral ============ */
+(()=>{
+const c=document.getElementById('phiCanvas'),x=c.getContext('2d');
+const slider=document.getElementById('phiSlider'),whisper=document.getElementById('phiWhisper');
+const PHI=(1+Math.sqrt(5))/2;
+let sunflower=false,auto=false;
+const whispers=[[0,"Begin. One square at a time."],[12,"Each square's side: the sum of the two before it. Fibonacci is hiding here."],[35,"See the curve forming? No one drew it. It emerged."],[60,"This exact spiral lives in nautilus shells, hurricanes, and galaxies."],[85,"φ is the only number whose square is itself plus one. Nature's favorite."]];
+function draw(t){
+  x.clearRect(0,0,c.width,c.height);
+  const maxTurns=4*Math.PI*t+0.0001,cx=c.width*0.58,cy=c.height*0.52,a=4;
+  x.save();x.translate(cx,cy);
+  x.beginPath();
+  for(let th=0;th<=maxTurns;th+=0.02){
+    const r=a*Math.pow(PHI,th/(Math.PI/2))*0.5;
+    const X=r*Math.cos(th),Y=r*Math.sin(th);
+    th===0?x.moveTo(X,Y):x.lineTo(X,Y);
+  }
+  const grad=x.createLinearGradient(-200,-200,200,200);
+  grad.addColorStop(0,'#f0c36d');grad.addColorStop(1,'#d4a24e');
+  x.strokeStyle=grad;x.lineWidth=2.4;x.shadowColor='#d4a24e';x.shadowBlur=12;x.stroke();x.shadowBlur=0;
+  x.strokeStyle='rgba(247,243,234,.18)';x.lineWidth=1;
+  for(let k=0;k*(Math.PI/2)<=maxTurns;k++){
+    const th=k*Math.PI/2,r=a*Math.pow(PHI,th/(Math.PI/2))*0.5;
+    x.save();x.rotate(th);x.strokeRect(0,-r,r,r);x.restore();
+  }
+  x.restore();
+  if(sunflower){
+    x.save();x.translate(cx,cy);
+    const gAng=Math.PI*(3-Math.sqrt(5)),n=Math.floor(500*t)+40;
+    for(let i=0;i<n;i++){
+      const th=i*gAng,r=3.2*Math.sqrt(i);
+      x.beginPath();x.arc(r*Math.cos(th),r*Math.sin(th),1.8,0,7);
+      x.fillStyle=`rgba(62,166,160,${.25+.5*(i/n)})`;x.fill();
+    }
+    x.restore();
+  }
+  let msg=whispers[0][1];
+  whispers.forEach(wp=>{if(t*100>=wp[0])msg=wp[1]});
+  if(sunflower)msg="Sunflower seeds pack at the golden angle, 137.5°. Any other angle wastes space. Evolution did the math.";
+  setW(whisper,msg);
+}
+slider.addEventListener('input',()=>{auto=false;draw(slider.value/100)});
+document.getElementById('phiSun').addEventListener('click',e=>{sunflower=!sunflower;e.target.classList.toggle('active');draw(slider.value/100)});
+document.getElementById('phiAuto').addEventListener('click',()=>{auto=true;
+  (function step(){if(!auto)return;let v=+slider.value+0.6;if(v>100){auto=false;v=100}slider.value=v;draw(v/100);if(auto)requestAnimationFrame(step)})();});
+draw(0);
+})();
+
+/* ============ Exhibit 2: pi ============ */
+(()=>{
+const c=document.getElementById('piCanvas'),x=c.getContext('2d');
+const slider=document.getElementById('piSlider'),read=document.getElementById('piReadout'),whisper=document.getElementById('piWhisper');
+let mode='roll',walkAnim=null;
+const D="14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346034861045432664821339360726024914127372458700660631558817488152092096282925409171536436789259036001133053054882046652138414695194151160943305727036575959195309218611738193261179310511854807446237996274956735188575272489122793818301194912";
+function drawRoll(t){
+  cancelAnimationFrame(walkAnim);
+  x.clearRect(0,0,c.width,c.height);
+  const R=54,groundY=c.height*0.62,startX=70;
+  x.strokeStyle='#2a3040';x.beginPath();x.moveTo(30,groundY);x.lineTo(c.width-30,groundY);x.stroke();
+  x.font='12px IBM Plex Mono';
+  for(let k=0;k<=3;k++){
+    const tx=startX+k*2*R;
+    if(tx<c.width-30){
+      x.strokeStyle='#3a4152';x.beginPath();x.moveTo(tx,groundY-6);x.lineTo(tx,groundY+6);x.stroke();
+      x.fillStyle='#8a8577';x.fillText(k+'d',tx-8,groundY+24);
+    }
+  }
+  const dist=t*Math.PI*2*R;
+  const wheelX=startX+dist,ang=dist/R;
+  x.strokeStyle='#3ea6a0';x.lineWidth=3;x.shadowColor='#3ea6a0';x.shadowBlur=8;
+  x.beginPath();x.moveTo(startX,groundY);x.lineTo(Math.min(wheelX,c.width-40),groundY);x.stroke();x.shadowBlur=0;
+  x.strokeStyle='#c9c3b4';x.lineWidth=2;
+  x.beginPath();x.arc(wheelX,groundY-R,R,0,7);x.stroke();
+  x.strokeStyle='#3ea6a0';x.lineWidth=3;
+  x.beginPath();x.arc(wheelX,groundY-R,R,Math.PI/2+ang,Math.PI/2+2*Math.PI,false);x.stroke();
+  x.fillStyle='#f0c36d';
+  x.beginPath();x.arc(wheelX+R*Math.cos(Math.PI/2+ang),groundY-R+R*Math.sin(Math.PI/2+ang),4,0,7);x.fill();
+  const diam=dist/(2*R);
+  read.textContent=diam.toFixed(2)+' diameters';
+  let msg="Push the wheel. Count the diameters.";
+  if(diam>0.4)msg="The teal line is the circle's edge, laid flat on the ground.";
+  if(diam>1.6)msg="Past 2 diameters and still going. The circle holds more edge than it looks.";
+  if(diam>2.9)msg="It stops at 3.14159… Every circle. Every size. Every planet. π.";
+  setW(whisper,msg);
+}
+function drawWalk(){
+  x.clearRect(0,0,c.width,c.height);
+  read.textContent='π: infinite, patternless';
+  setW(whisper,"Each digit 0 to 9 becomes a direction. π walks forever and never repeats. This path has no end.");
+  let px=c.width/2,py=c.height/2,i=0;const step=6;
+  cancelAnimationFrame(walkAnim);
+  (function walk(){
+    if(mode!=='walk')return;
+    for(let k=0;k<3;k++){
+      if(i>=D.length)return;
+      const d=+D[i],ang=d/10*Math.PI*2;
+      const nx=px+step*Math.cos(ang),ny=py+step*Math.sin(ang);
+      x.strokeStyle=`hsla(${175+d*8},55%,58%,.75)`;x.lineWidth=1.6;
+      x.beginPath();x.moveTo(px,py);x.lineTo(nx,ny);x.stroke();
+      px=Math.max(10,Math.min(c.width-10,nx));py=Math.max(10,Math.min(c.height-10,ny));i++;
+    }
+    walkAnim=requestAnimationFrame(walk);
+  })();
+}
+slider.addEventListener('input',()=>{mode='roll';drawRoll(slider.value/100)});
+document.getElementById('piWalk').addEventListener('click',()=>{mode='walk';drawWalk()});
+document.getElementById('piRoll').addEventListener('click',()=>{mode='roll';drawRoll(slider.value/100)});
+drawRoll(0);
+})();
+
+/* ============ Exhibit 3: ulam ============ */
+(()=>{
+const c=document.getElementById('ulamCanvas'),x=c.getContext('2d');
+const slider=document.getElementById('ulamSlider'),read=document.getElementById('ulamReadout'),whisper=document.getElementById('ulamWhisper');
+const MAXN=6400;
+const coords=[];{
+  let cx=0,cy=0,dx=1,dy=0,seg=1,pass=0,step=0;
+  for(let n=1;n<=MAXN;n++){
+    coords.push([cx,cy]);cx+=dx;cy+=dy;step++;
+    if(step===seg){step=0;pass++;[dx,dy]=[-dy,dx];if(pass%2===0)seg++;}
+  }
+}
+const sieve=new Uint8Array(MAXN+1).fill(1);sieve[0]=sieve[1]=0;
+for(let i=2;i*i<=MAXN;i++)if(sieve[i])for(let j=i*i;j<=MAXN;j+=i)sieve[j]=0;
+function draw(t){
+  const N=Math.max(1,Math.floor(t*MAXN));
+  x.clearRect(0,0,c.width,c.height);
+  const cell=Math.max(2,Math.floor(300/Math.sqrt(N)));
+  const cx=c.width/2,cy=c.height/2;
+  for(let n=1;n<=N;n++){
+    const[gx,gy]=coords[n-1];
+    const X=cx+gx*cell,Y=cy+gy*cell;
+    if(X<-4||X>c.width+4||Y<-4||Y>c.height+4)continue;
+    if(sieve[n]){
+      x.fillStyle='#d96a7b';x.shadowColor='#d96a7b';x.shadowBlur=cell>4?6:2;
+      x.fillRect(X-cell*0.42,Y-cell*0.42,cell*0.84,cell*0.84);x.shadowBlur=0;
+    }else if(cell>5){
+      x.fillStyle='rgba(247,243,234,.06)';
+      x.fillRect(X-cell*0.35,Y-cell*0.35,cell*0.7,cell*0.7);
+    }
+  }
+  read.textContent='n = '+N.toLocaleString();
+  let msg="Spiral outward from 1. Light up the primes.";
+  if(N>60)msg="Rose squares are primes. Still looks random, right?";
+  if(N>800)msg="Look closer. Diagonals are forming. Primes prefer certain lines.";
+  if(N>4000)msg="Those diagonal streaks are real. Mathematicians still cannot fully explain them. An open mystery, on your screen.";
+  setW(whisper,msg);
+}
+slider.addEventListener('input',()=>draw(slider.value/100));
+let auto=false;
+document.getElementById('ulamAuto').addEventListener('click',()=>{auto=true;
+  (function step(){if(!auto)return;let v=+slider.value+0.5;if(v>100){auto=false;v=100}slider.value=v;draw(v/100);if(auto)requestAnimationFrame(step)})();});
+draw(0.01);
+})();
+
+/* ============ Exhibit 4: fourier ============ */
+(()=>{
+const cv=document.getElementById('fCanvas'),ctx=cv.getContext('2d');
+const hint=document.getElementById('fHint');
+const redrawBtn=document.getElementById('fRedraw'),clearBtn=document.getElementById('fClear');
+const nSlider=document.getElementById('fSlider'),nReadout=document.getElementById('fReadout');
+const whisper=document.getElementById('fWhisper');
+let drawing=false,points=[],coeffs=[],mode='draw',t=0,trace=[],anim=null;
+function posFromEvent(e){
+  const r=cv.getBoundingClientRect();
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+  return[cx*cv.width/r.width,cy*cv.height/r.height];
+}
+function startDraw(e){
+  e.preventDefault();
+  if(mode==='redraw'){stopAnim();mode='draw';points=[];}
+  drawing=true;hint.classList.add('hide');
+  points.push(posFromEvent(e));
+}
+function moveDraw(e){
+  if(!drawing)return;e.preventDefault();
+  const p=posFromEvent(e),last=points[points.length-1];
+  if(Math.hypot(p[0]-last[0],p[1]-last[1])>2.5){points.push(p);renderSketch();}
+}
+function endDraw(){
+  if(!drawing)return;drawing=false;
+  if(points.length>10){redrawBtn.disabled=false;setW(whisper,"Nice. Now press the button, and watch circles do the impossible.");}
+}
+cv.addEventListener('mousedown',startDraw);cv.addEventListener('mousemove',moveDraw);
+addEventListener('mouseup',endDraw);
+cv.addEventListener('touchstart',startDraw,{passive:false});
+cv.addEventListener('touchmove',moveDraw,{passive:false});
+cv.addEventListener('touchend',endDraw);
+function renderSketch(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(points.length<2)return;
+  ctx.strokeStyle='rgba(247,243,234,.85)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+  for(const p of points)ctx.lineTo(p[0],p[1]);
+  ctx.stroke();
+}
+function computeDFT(pts){
+  const N=512,res=[],total=pts.length;
+  let dists=[0];
+  for(let i=1;i<total;i++)dists.push(dists[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+  const L=dists[total-1];let j=0;
+  for(let k=0;k<N;k++){
+    const target=L*k/N;
+    while(j<total-2&&dists[j+1]<target)j++;
+    const seg=dists[j+1]-dists[j]||1,f=(target-dists[j])/seg;
+    res.push([pts[j][0]+(pts[j+1][0]-pts[j][0])*f,pts[j][1]+(pts[j+1][1]-pts[j][1])*f]);
+  }
+  const out=[];
+  for(let k=0;k<N;k++){
+    let re=0,im=0;const freq=k<=N/2?k:k-N;
+    for(let n=0;n<N;n++){
+      const phi=-2*Math.PI*k*n/N;
+      re+=res[n][0]*Math.cos(phi)-res[n][1]*Math.sin(phi);
+      im+=res[n][0]*Math.sin(phi)+res[n][1]*Math.cos(phi);
+    }
+    out.push({freq,amp:Math.hypot(re/N,im/N),phase:Math.atan2(im/N,re/N)});
+  }
+  out.sort((a,b)=>b.amp-a.amp);
+  return out;
+}
+function stopAnim(){if(anim){cancelAnimationFrame(anim);anim=null}}
+function startRedraw(){
+  mode='redraw';coeffs=computeDFT(points);t=0;trace=[];stopAnim();loop();
+  setW(whisper,"Each circle spins at one fixed speed. Big circles carry the shape, tiny ones carry the detail.");
+}
+function loop(){
+  const N=Math.min(+nSlider.value,coeffs.length);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='rgba(247,243,234,.08)';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+  for(const p of points)ctx.lineTo(p[0],p[1]);
+  ctx.stroke();
+  let x=0,y=0;
+  for(let i=0;i<N;i++){
+    const c=coeffs[i],px=x,py=y;
+    const ang=c.phase+2*Math.PI*c.freq*t;
+    x+=c.amp*Math.cos(ang);y+=c.amp*Math.sin(ang);
+    if(c.amp>1.5){
+      ctx.strokeStyle=`rgba(212,162,78,${Math.min(.5,c.amp/120+.06)})`;ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(px,py,c.amp,0,7);ctx.stroke();
+      ctx.strokeStyle='rgba(240,195,109,.5)';
+      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(x,y);ctx.stroke();
+    }
+  }
+  ctx.fillStyle='#f0c36d';ctx.shadowColor='#f0c36d';ctx.shadowBlur=14;
+  ctx.beginPath();ctx.arc(x,y,5,0,7);ctx.fill();ctx.shadowBlur=0;
+  trace.push([x,y]);
+  if(trace.length>514)trace.shift();
+  ctx.strokeStyle='#3ea6a0';ctx.lineWidth=3.4;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.shadowColor='#3ea6a0';ctx.shadowBlur=8;
+  ctx.beginPath();
+  trace.forEach((p,i)=>i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]));
+  ctx.stroke();ctx.shadowBlur=0;
+  t+=1/512;
+  if(t>=1){t=0;trace=[];}
+  anim=requestAnimationFrame(loop);
+}
+redrawBtn.addEventListener('click',startRedraw);
+clearBtn.addEventListener('click',()=>{
+  stopAnim();mode='draw';points=[];trace=[];redrawBtn.disabled=true;
+  ctx.clearRect(0,0,cv.width,cv.height);hint.classList.remove('hide');
+  setW(whisper,"Every drawing, no matter how wild, is secretly a sum of perfect circles.");
+});
+nSlider.addEventListener('input',()=>{
+  nReadout.textContent=nSlider.value+' circles';
+  if(mode==='redraw'){
+    const n=+nSlider.value;trace=[];
+    if(n<12)setW(whisper,"Too few circles and your drawing goes blurry, like a memory fading. Slide up and watch it sharpen.");
+    else if(n>120)setW(whisper,"This is how JPEG images, MP3 music and your phone calls work. Keep the big circles, drop the tiny ones.");
+    else setW(whisper,"Each circle spins at one fixed speed. Big circles carry the shape, tiny ones carry the detail.");
+  }
+});
+})();
+
+/* ============ Exhibit 5: 1729 ============ */
+(()=>{
+const taxi=document.getElementById('taxiNum');
+taxi.addEventListener('click',()=>{
+  let i=0;
+  const iv=setInterval(()=>{taxi.textContent=Math.floor(1000+Math.random()*9000);if(++i>12){clearInterval(iv);taxi.textContent='1729'}},60);
+});
+function isoProject(x,y,z,scale,ox,oy){return[ox+(x-y)*scale*0.866,oy+(x+y)*scale*0.5-z*scale]}
+function drawUnitCube(ctx,x,y,z,scale,ox,oy,fT,fL,fR){
+  const p=(a,b,c)=>isoProject(a,b,c,scale,ox,oy);
+  ctx.fillStyle=fT;ctx.beginPath();
+  let[ax,ay]=p(x,y,z+1);ctx.moveTo(ax,ay);[ax,ay]=p(x+1,y,z+1);ctx.lineTo(ax,ay);[ax,ay]=p(x+1,y+1,z+1);ctx.lineTo(ax,ay);[ax,ay]=p(x,y+1,z+1);ctx.lineTo(ax,ay);ctx.closePath();ctx.fill();
+  ctx.fillStyle=fL;ctx.beginPath();
+  [ax,ay]=p(x,y+1,z+1);ctx.moveTo(ax,ay);[ax,ay]=p(x+1,y+1,z+1);ctx.lineTo(ax,ay);[ax,ay]=p(x+1,y+1,z);ctx.lineTo(ax,ay);[ax,ay]=p(x,y+1,z);ctx.lineTo(ax,ay);ctx.closePath();ctx.fill();
+  ctx.fillStyle=fR;ctx.beginPath();
+  [ax,ay]=p(x+1,y,z+1);ctx.moveTo(ax,ay);[ax,ay]=p(x+1,y+1,z+1);ctx.lineTo(ax,ay);[ax,ay]=p(x+1,y+1,z);ctx.lineTo(ax,ay);[ax,ay]=p(x+1,y,z);ctx.lineTo(ax,ay);ctx.closePath();ctx.fill();
+}
+function cubeOrder(n){const out=[];for(let z=0;z<n;z++)for(let y=0;y<n;y++)for(let x=0;x<n;x++)out.push([x,y,z]);return out}
+const teal={t:'#4dbdb6',l:'#2a7773',r:'#38948f'},rose={t:'#e2808f',l:'#9c4552',r:'#c05a68'};
+function makeScene(canvasId,eqId,sizeA,sizeB){
+  const cv=document.getElementById(canvasId),ctx=cv.getContext('2d');
+  const eq=document.getElementById(eqId);
+  const orderA=cubeOrder(sizeA),orderB=cubeOrder(sizeB);
+  const totalA=orderA.length,totalB=orderB.length;
+  const scaleB=Math.min((cv.width*0.5)/(sizeB*1.8),(cv.height*0.6)/(sizeB*1.6));
+  const oxA=cv.width*0.2,oyA=cv.height*0.64,oxB=cv.width*0.64,oyB=cv.height*0.78;
+  let iA=0,iB=0,anim=null;
+  function frame(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for(let k=0;k<iA;k++){const[x,y,z]=orderA[k];drawUnitCube(ctx,x,y,z,scaleB,oxA,oyA,teal.t,teal.l,teal.r)}
+    for(let k=0;k<iB;k++){const[x,y,z]=orderB[k];drawUnitCube(ctx,x,y,z,scaleB,oxB,oyB,rose.t,rose.l,rose.r)}
+    ctx.font='26px IBM Plex Mono';ctx.fillStyle='#f0c36d';ctx.textAlign='center';
+    ctx.fillText((iA+iB).toLocaleString()+' / 1,729',cv.width/2,48);
+    eq.innerHTML=`<span class="a">${sizeA}³ (${iA.toLocaleString()})</span> + <span class="b">${sizeB}³ (${iB.toLocaleString()})</span>`+((iA+iB)===1729?` = <span class="total">1729</span>`:'');
+  }
+  function step(){
+    const bA=Math.max(1,Math.floor(totalA/140)),bB=Math.max(1,Math.floor(totalB/140));
+    if(iA<totalA)iA=Math.min(totalA,iA+bA);
+    else if(iB<totalB)iB=Math.min(totalB,iB+bB);
+    frame();
+    if(iA<totalA||iB<totalB)anim=requestAnimationFrame(step);
+  }
+  return{build(){cancelAnimationFrame(anim);iA=0;iB=0;step()},reset(){cancelAnimationFrame(anim);iA=0;iB=0;frame()},init(){frame()}};
+}
+const sceneA=makeScene('cvA','eqA',1,12),sceneB=makeScene('cvB','eqB',9,10);
+sceneA.init();sceneB.init();
+document.getElementById('buildBtn').addEventListener('click',()=>{sceneA.build();sceneB.build()});
+document.getElementById('resetCubes').addEventListener('click',()=>{sceneA.reset();sceneB.reset()});
+/* hunt */
+const huntInput=document.getElementById('huntInput'),huntResult=document.getElementById('huntResult'),huntWhisper=document.getElementById('huntWhisper');
+function findCubePairs(n){
+  const pairs=[];
+  for(let a=1;a*a*a<=n/2;a++){
+    const rem=n-a*a*a,b=Math.round(Math.cbrt(rem));
+    if(b>=a&&b*b*b===rem)pairs.push([a,b]);
+  }
+  return pairs;
+}
+function runHunt(n){
+  if(!n||n<2||n>1000000){huntResult.innerHTML='<span class="miss">give me a number between 2 and 1,000,000</span>';return}
+  const pairs=findCubePairs(n);
+  let html=`<span class="hit">${n.toLocaleString()}</span><br>`;
+  if(pairs.length===0){
+    html+=`<span class="miss">cannot be written as a sum of two cubes at all. Hardy would call it dull.</span>`;
+    setW(huntWhisper,"Most numbers fail completely. Cubes grow fast and leave huge gaps between them.");
+  }else if(pairs.length===1){
+    const[a,b]=pairs[0];
+    html+=`<span class="pair">= ${a}³ + ${b}³</span> <span class="miss">· one way only. Close, but no taxicab.</span>`;
+    setW(huntWhisper,"One way is common enough. Two ways is the miracle. Keep hunting.");
+  }else{
+    pairs.forEach(([a,b])=>{html+=`<span class="pair">= ${a}³ + ${b}³</span><br>`});
+    html+=`<span class="hit">${pairs.length} different ways. A taxicab number! ✦</span>`;
+    setW(huntWhisper,"You found one. After 1729 comes 4104, then 13832. The smallest with THREE ways? 87,539,319.");
+  }
+  huntResult.innerHTML=html;
+}
+document.getElementById('huntBtn').addEventListener('click',()=>runHunt(+huntInput.value));
+huntInput.addEventListener('keydown',e=>{if(e.key==='Enter')runHunt(+huntInput.value)});
+const surprises=[4104,13832,20683,32832,39312,1729,46683,64232];let si=0;
+document.getElementById('surpriseBtn').addEventListener('click',()=>{huntInput.value=surprises[si%surprises.length];si++;runHunt(+huntInput.value)});
+})();
+
+/* ============ Exhibit 6: gallery plates ============ */
+/* rose */
+(()=>{
+const cv=document.getElementById('cRose'),x=cv.getContext('2d');
+const s=document.getElementById('roseK'),v=document.getElementById('roseKv'),w=document.getElementById('roseW');
+function draw(){
+  const k=+s.value;v.textContent=k.toFixed(2);
+  x.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2,R=cv.width*0.42;
+  const turns=Number.isInteger(k)?Math.PI*2:Math.PI*40;
+  x.beginPath();
+  for(let th=0;th<=turns;th+=0.004){
+    const r=R*Math.cos(k*th);
+    const X=cx+r*Math.cos(th),Y=cy+r*Math.sin(th);
+    th===0?x.moveTo(X,Y):x.lineTo(X,Y);
+  }
+  const grad=x.createRadialGradient(cx,cy,0,cx,cy,R);
+  grad.addColorStop(0,'#f0c36d');grad.addColorStop(1,'#d4a24e');
+  x.strokeStyle=grad;x.lineWidth=1.6;x.shadowColor='#d4a24e';x.shadowBlur=10;x.stroke();x.shadowBlur=0;
+  const frac=Math.abs(k-Math.round(k));
+  if(frac>0.02&&frac<0.98)setW(w,"Between whole numbers now. The flower cannot close, so it weaves. These are the secret roses.");
+  else setW(w,Math.round(k)%2===1?`k = ${Math.round(k)}, odd, so exactly ${Math.round(k)} petals. Odd numbers are shy.`:`k = ${Math.round(k)}, even, so ${2*Math.round(k)} petals. Even numbers double their bloom.`);
+}
+s.addEventListener('input',draw);draw();
+})();
+/* maurer */
+(()=>{
+const cv=document.getElementById('cMaurer'),x=cv.getContext('2d');
+const sn=document.getElementById('maurerN'),sd=document.getElementById('maurerD');
+const vn=document.getElementById('maurerNv'),vd=document.getElementById('maurerDv'),w=document.getElementById('maurerW');
+function draw(){
+  const n=+sn.value,d=+sd.value;
+  vn.textContent=n;vd.textContent=d;
+  x.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2,R=cv.width*0.42;
+  x.beginPath();
+  for(let i=0;i<=360;i++){
+    const k=i*d*Math.PI/180,r=R*Math.sin(n*k);
+    const X=cx+r*Math.cos(k),Y=cy+r*Math.sin(k);
+    i===0?x.moveTo(X,Y):x.lineTo(X,Y);
+  }
+  x.strokeStyle='rgba(62,166,160,.55)';x.lineWidth=1;x.shadowColor='#3ea6a0';x.shadowBlur=6;x.stroke();x.shadowBlur=0;
+  x.beginPath();
+  for(let th=0;th<=Math.PI*2;th+=0.004){
+    const r=R*Math.sin(n*th);
+    const X=cx+r*Math.cos(th),Y=cy+r*Math.sin(th);
+    th===0?x.moveTo(X,Y):x.lineTo(X,Y);
+  }
+  x.strokeStyle='rgba(240,195,109,.25)';x.lineWidth=1.4;x.stroke();
+  const isPrime=(()=>{if(d<2)return false;for(let i=2;i*i<=d;i++)if(d%i===0)return false;return true})();
+  if(isPrime)setW(w,`${d} is prime, so the thread visits everywhere before repeating. Rich weave.`);
+  else if(360%d===0)setW(w,`${d} divides 360 evenly. The thread repeats early and goes simple. Try a prime.`);
+  else setW(w,"Prime number jumps make the richest weaves. Try 29, 71, 97, 173.");
+}
+sn.addEventListener('input',draw);sd.addEventListener('input',draw);draw();
+})();
+/* lissajous */
+(()=>{
+const cv=document.getElementById('cLiss'),x=cv.getContext('2d');
+const sa=document.getElementById('lissA'),sb=document.getElementById('lissB'),sp=document.getElementById('lissP');
+const va=document.getElementById('lissAv'),vb=document.getElementById('lissBv'),vp=document.getElementById('lissPv'),w=document.getElementById('lissW');
+function draw(){
+  const a=+sa.value,b=+sb.value,p=+sp.value*Math.PI/180;
+  va.textContent=a;vb.textContent=b;vp.textContent=sp.value;
+  x.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2,R=cv.width*0.4;
+  x.beginPath();
+  for(let t=0;t<=Math.PI*2;t+=0.002){
+    const X=cx+R*Math.sin(a*t+p),Y=cy+R*Math.sin(b*t);
+    t===0?x.moveTo(X,Y):x.lineTo(X,Y);
+  }
+  x.strokeStyle='rgba(155,127,212,.8)';x.lineWidth=1.8;x.shadowColor='#9b7fd4';x.shadowBlur=10;x.stroke();x.shadowBlur=0;
+  const g=(m,n)=>n?g(n,m%n):m,gg=g(a,b),ra=a/gg,rb=b/gg;
+  const musical={'1:1':'unison, a circle or line','2:1':'an octave','3:2':'a perfect fifth','4:3':'a perfect fourth','5:4':'a major third','9:8':'a whole tone'};
+  const key=`${ra}:${rb}`,key2=`${rb}:${ra}`;
+  if(musical[key])setW(w,`${a}:${b} reduces to ${key}. In music this is ${musical[key]}. You are looking at harmony.`);
+  else if(musical[key2])setW(w,`${a}:${b} reduces to ${key2}. In music this is ${musical[key2]}. You are looking at harmony.`);
+  else setW(w,`${a}:${b}. The more complex the ratio, the more intricate the knot. Simple ratios are the ones our ears call consonant.`);
+}
+sa.addEventListener('input',draw);sb.addEventListener('input',draw);sp.addEventListener('input',draw);draw();
+})();
+/* phyllotaxis */
+(()=>{
+const cv=document.getElementById('cPhyl'),x=cv.getContext('2d');
+const s=document.getElementById('phylA'),v=document.getElementById('phylAv'),w=document.getElementById('phylW');
+function draw(){
+  const angDeg=+s.value;v.textContent=angDeg.toFixed(2);
+  x.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2,ang=angDeg*Math.PI/180;
+  const N=900,c=cv.width*0.0155;
+  for(let n=0;n<N;n++){
+    const th=n*ang,r=c*Math.sqrt(n);
+    const X=cx+r*Math.cos(th),Y=cy+r*Math.sin(th);
+    const sz=1.5+2.6*(n/N),hue=42+(n/N)*10;
+    x.beginPath();x.arc(X,Y,sz,0,7);
+    x.fillStyle=`hsla(${hue},62%,${52+18*(n/N)}%,.9)`;x.fill();
+  }
+  const diff=Math.abs(angDeg-137.508);
+  if(diff<0.05)setW(w,"137.5 degrees. The golden angle. Every seed gets maximum room. No line of dots anywhere, only spirals both ways.");
+  else if(diff<1)setW(w,"So close, and already the packing loosens. Nature cannot afford this slider position.");
+  else setW(w,"Spokes. Gaps. Wasted space. Sunflowers that grew like this did not leave descendants.");
+}
+s.addEventListener('input',draw);
+document.getElementById('phylGolden').addEventListener('click',()=>{s.value=137.508;draw()});
+document.getElementById('phylBreak').addEventListener('click',()=>{s.value=(Math.random()<.5?135.2:139.7)+Math.random();draw()});
+draw();
+})();
+/* harmonograph */
+(()=>{
+const cv=document.getElementById('cHarm'),x=cv.getContext('2d');
+const sr=document.getElementById('harmR'),sd=document.getElementById('harmD');
+const vr=document.getElementById('harmRv'),vd=document.getElementById('harmDv'),w=document.getElementById('harmW');
+let anim=null;
+function draw(){
+  cancelAnimationFrame(anim);
+  const ratio=+sr.value,decay=+sd.value;
+  vr.textContent=ratio.toFixed(2);vd.textContent=decay.toFixed(4);
+  x.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2,R=cv.width*0.4;
+  let t=0,prevX=null,prevY=null;
+  function step(){
+    for(let k=0;k<40;k++){
+      const damp=Math.exp(-decay*t);
+      if(damp<0.02)return;
+      const X=cx+R*damp*Math.sin(t+Math.PI/2),Y=cy+R*damp*Math.sin(t*ratio);
+      if(prevX!==null){
+        x.strokeStyle=`rgba(217,106,123,${.12+damp*.4})`;x.lineWidth=1.1;
+        x.beginPath();x.moveTo(prevX,prevY);x.lineTo(X,Y);x.stroke();
+      }
+      prevX=X;prevY=Y;t+=0.01;
+    }
+    anim=requestAnimationFrame(step);
+  }
+  step();
+  const frac=Math.abs(ratio-Math.round(ratio));
+  if(frac<0.005)setW(w,"A perfect whole ratio. Clean, closed, a little cold. Nudge it by 0.01 and watch it come alive.");
+  else if(frac<0.1)setW(w,"Just off perfect. The curve almost repeats but drifts each pass. This near-miss is where the beauty lives.");
+  else setW(w,"Far from whole numbers now. Wilder, stranger, still lawful. The pendulum never lies.");
+}
+sr.addEventListener('input',draw);sd.addEventListener('input',draw);
+document.getElementById('harmGo').addEventListener('click',draw);
+draw();
+})();
+</script>
+</body>
+</html>
